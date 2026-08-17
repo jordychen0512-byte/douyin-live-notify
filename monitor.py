@@ -67,20 +67,20 @@ def send_discord_notification(streamer, info):
         print("❌ 找不到 DISCORD_WEBHOOK_URL")
         return False
 
-    payload = {
-        "content": f"🔴 **{streamer['name']} 開始直播啦！**",
-        "embeds": [
-            {
-                "title": info["title"],
-                "url": streamer["url"],
-                "description": "🇨🇳 抖音｜點擊標題前往直播",
-                "color": 15158332,
-            }
-        ],
-        "allowed_mentions": {
-            "parse": []
-        },
-    }
+payload = {
+    "content": f"@everyone\n\n🔴 **{streamer['name']} 開始直播啦！**",
+    "embeds": [
+        {
+            "title": info["title"],
+            "url": streamer["url"],
+            "description": "🇨🇳 抖音｜點擊標題前往直播",
+            "color": 15158332,
+        }
+    ],
+    "allowed_mentions": {
+        "parse": ["everyone"]
+    },
+}
 
     try:
         response = requests.post(
