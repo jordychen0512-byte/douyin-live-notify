@@ -3,8 +3,9 @@ name: Check Douyin Live
 on:
   workflow_dispatch:
 
-  schedule:
-    - cron: "4,9,14,19,24,29,34,39,44,49,54,59 * * * *"
+concurrency:
+  group: douyin-live-check
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -12,6 +13,7 @@ permissions:
 jobs:
   check-live:
     runs-on: ubuntu-latest
+    timeout-minutes: 4
 
     env:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -24,11 +26,11 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+          cache: pip
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install streamget requests
+          python -m pip install --requirement requirements.txt
           streamget install-node
 
       - name: Check Douyin live status
@@ -49,3 +51,18 @@ jobs:
               echo "Live state did not change."
             fi
           fi
+
+      - name: Notify Discord when the monitor fails
+        if: ${{ failure() && env.DISCORD_WEBHOOK_URL != '' }}
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          payload=$(jq -n \
+            --arg content "⚠️ 抖音直播監控執行失敗：${RUN_URL}" \
+            '{content: $content}')
+          curl --fail-with-body \
+            --retry 2 \
+            --retry-all-errors \
+            --header "Content-Type: application/json" \
+            --data "$payload" \
+            "$DISCORD_WEBHOOK_URL"
