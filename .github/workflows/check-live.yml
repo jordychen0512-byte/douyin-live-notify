@@ -2,8 +2,6 @@ name: Check Douyin Live
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/5 * * * *"
 
 concurrency:
   group: douyin-live-check
@@ -43,9 +41,7 @@ jobs:
           if [ -f state.json ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
             git add state.json
-
             if ! git diff --cached --quiet; then
               git commit -m "Update live state"
               git push
