@@ -23,6 +23,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v7
@@ -40,17 +43,32 @@ jobs:
 
       - name: Save live state
         run: |
-          if [ -f state.json ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add state.json
-            if ! git diff --cached --quiet; then
-              git commit -m "Update live state"
-              git push
-            else
-              echo "Live state did not change."
-            fi
+          if [ ! -f state.json ]; then
+            echo "::error::state.json is missing."
+            exit 1
           fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          if git diff --cached --quiet; then
+            echo "Live state did not change."
+            exit 0
+          fi
+          git commit -m "Update live state"
+          for attempt in 1 2 3; do
+            git fetch origin "$GITHUB_REF_NAME"
+            if ! git rebase FETCH_HEAD; then
+              git rebase --abort
+              echo "::error::Live state conflicts with a remote update; remote data was not overwritten."
+              exit 1
+            fi
+            if git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+            echo "::warning::State push attempt $attempt failed."
+          done
+          echo "::error::Could not save live state after 3 attempts."
+          exit 1
 
       - name: Notify Discord when the monitor fails
         if: ${{ failure() && env.DISCORD_WEBHOOK_URL != '' }}
