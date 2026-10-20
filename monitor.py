@@ -135,7 +135,7 @@ def send_discord_notification(streamer, info):
                 "description":
                     ("📺 Bilibili｜點擊標題前往直播"
                      if streamer.get("platform") == "bilibili"
-                     else "🇨🇳 抖音｜點擊標題前往直播"),
+                     else "📺 抖音｜點擊標題前往直播"),
                 "color": 15158332,
             }
         ],
