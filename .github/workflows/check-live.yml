@@ -1,4 +1,4 @@
-name: Check Douyin Live
+name: Check VV Live
 
 on:
   workflow_dispatch:
@@ -38,7 +38,7 @@ jobs:
           python -m pip install --requirement requirements.txt
           streamget install-node
 
-      - name: Check Douyin live status
+      - name: Check Douyin and Bilibili live status
         run: python monitor.py
 
       - name: Save live state
@@ -76,7 +76,7 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           payload=$(jq -n \
-            --arg content "⚠️ 抖音直播監控執行失敗：${RUN_URL}" \
+            --arg content "⚠️ VV 直播監控執行失敗：${RUN_URL}" \
             '{content: $content}')
           curl --fail-with-body \
             --retry 2 \

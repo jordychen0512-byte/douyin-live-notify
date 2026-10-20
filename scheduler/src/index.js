@@ -1,5 +1,5 @@
-// Shared existing Worker: preserve Douyin checks and add YouTube every five minutes.
-export const REPOSITORIES = ["douyin-live-notify", "youtube-live-notify"];
+// Shared existing Worker: check VV (Douyin/Bilibili) and YouTube every five minutes.
+export const REPOSITORIES = ["vv-live-notify", "youtube-live-notify"];
 
 export async function triggerMonitor(env, repo, fetcher = fetch) {
   if (!env.GITHUB_TOKEN) throw new Error("GITHUB_TOKEN secret is not configured");
