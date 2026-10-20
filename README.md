@@ -1,6 +1,6 @@
-# 抖音直播通知
+# 抖音 / Bilibili 直播通知
 
-檢查指定抖音直播間，在記錄狀態由未開播變成直播中時，透過 Discord Webhook 發送 `@everyone` 通知。
+檢查指定抖音與 Bilibili 直播間，在記錄狀態由未開播變成直播中時，透過同一個 Discord Webhook 發送 `@everyone` 通知。
 
 ## 目前監測名單
 
@@ -10,6 +10,9 @@
 | 盾反威威｜陶帅帅 | https://live.douyin.com/967062364422 |
 | 老牌威威｜齐天 | https://live.douyin.com/827018709286 |
 | 當代選手｜争锋瑾 | https://live.douyin.com/23531668627 |
+| 小璇天下第一好（Bilibili） | https://live.bilibili.com/12859122 |
+
+Bilibili 使用公開直播間 API `room/v1/Room/get_info`，並核對主播 UID `345786891`。`live_status == 1` 為直播中，`0`（未開播）與 `2`（輪播）不通知；API 錯誤、UID 不符、未知狀態均保留上次狀態。通知沿用既有 Webhook、排程和去重流程，無須新增 Secret。Bilibili 狀態 key 使用 `bilibili:12859122`，避免與其他平台撞號。
 
 名單定義於 `monitor.py` 的 `STREAMERS`。程式依序透過 `streamget.DouyinLiveStream` 查詢，以回傳資料的 `status == 2` 判定直播中，其他值判定未開播；目前沒有查詢重試或嚴格狀態驗證。
 

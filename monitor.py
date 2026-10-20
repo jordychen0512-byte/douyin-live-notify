@@ -29,6 +29,14 @@ STREAMERS = {
     },
 }
 
+STREAMERS["bilibili:12859122"] = {
+    "name": "小璇天下第一好",
+    "url": "https://live.bilibili.com/12859122",
+    "platform": "bilibili",
+    "room_id": 12859122,
+    "uid": 345786891,
+}
+
 STATE_FILE = Path("state.json")
 WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 
@@ -62,7 +70,10 @@ def save_state(state):
 
 
 async def check_stream(streamer):
-    """向抖音取得直播間目前狀態。"""
+    """向對應平台取得直播間目前狀態。"""
+    if streamer.get("platform") == "bilibili":
+        return await asyncio.to_thread(check_bilibili_stream, streamer)
+
     live = DouyinLiveStream()
 
     data = await live.fetch_web_stream_data(
@@ -75,6 +86,33 @@ async def check_stream(streamer):
         "anchor_name":
             data.get("anchor_name")
             or streamer["name"],
+    }
+
+
+def check_bilibili_stream(streamer):
+    """查詢失敗或資料異常時拋出例外，讓主流程保留上次狀態。"""
+    response = requests.get(
+        "https://api.live.bilibili.com/room/v1/Room/get_info",
+        params={"room_id": streamer["room_id"]},
+        headers={"User-Agent": "Mozilla/5.0", "Referer": streamer["url"]},
+        timeout=15,
+    )
+    response.raise_for_status()
+    result = response.json()
+    if not isinstance(result, dict) or result.get("code") != 0:
+        raise ValueError("Bilibili API 查詢失敗")
+    data = result.get("data")
+    if not isinstance(data, dict):
+        raise ValueError("Bilibili API 缺少直播間資料")
+    if data.get("uid") != streamer["uid"]:
+        raise ValueError("Bilibili 直播間 UID 與設定不符")
+    status = data.get("live_status")
+    if type(status) is not int or status not in (0, 1, 2):
+        raise ValueError("Bilibili 回傳未知直播狀態")
+    return {
+        "is_live": status == 1,
+        "title": data.get("title") or "Bilibili 直播",
+        "anchor_name": streamer["name"],
     }
 
 
@@ -95,7 +133,9 @@ def send_discord_notification(streamer, info):
                 "title": info["title"],
                 "url": streamer["url"],
                 "description":
-                    "🇨🇳 抖音｜點擊標題前往直播",
+                    ("📺 Bilibili｜點擊標題前往直播"
+                     if streamer.get("platform") == "bilibili"
+                     else "🇨🇳 抖音｜點擊標題前往直播"),
                 "color": 15158332,
             }
         ],
@@ -131,7 +171,7 @@ async def main():
     state = load_state()
 
     print("================================")
-    print("開始檢查抖音直播狀態")
+    print("開始檢查抖音 / Bilibili 直播狀態")
     print("================================")
 
     for room_id, streamer in STREAMERS.items():
