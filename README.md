@@ -1,4 +1,4 @@
-# vv-live-notify｜VV 直播通知
+# vv-live-notify｜威威直播通知
 
 檢查指定抖音與 Bilibili 直播間，在記錄狀態由未開播變成直播中時，透過同一個 Discord Webhook 發送 `@everyone` 通知。
 
